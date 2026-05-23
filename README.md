@@ -1,32 +1,29 @@
 # 🎓 英语单词学习应用
 
-一个专为小学生设计的英语单词学习 Web 应用，支持多词库分类、发音朗读、随机测验等功能。
+一个现代化、高性能且支持海量英语词汇的按需异步加载背单词 Web 应用。支持多词库分类选择大厅、衍生词汇选项卡卡片、发音朗读、无缝详情弹窗、自定义题量随机测验及动态合成提示音效等丰富功能。
 
 ---
 
 ## ✨ 功能特性
 
+### 🏛️ 词包选择大厅 (Lobby)
+- **卡片式大厅** - 精美醒目的卡片式大厅，包含各个英语阶段分类及单词总数。
+- **进度记忆横幅** - 顶部醒目展示“继续上次学习”横幅，智能识别并一键恢复上一次学习阶段的背词位置。
+
 ### 📚 学习模式
 
-- **逐个学习** - 逐词学习，支持前后翻页
-- **单词列表** - 网格展示，支持搜索和筛选
-- **随机测验** - 10 道题小测验，自动评分
+- **逐个学习** - 精美渐变卡片。限制卡片最大高度并为衍生信息开启局部磨砂滚动条；采用**选项卡式面板**交互（「例句」|「短语」|「同近反」|「同根词」）按需展示单词细节。
+- **单词列表** - 列表网格浏览与搜索。点击单词直接以 **Modal 详情弹窗** 展示完整卡片，看完关闭返回，**完美隔离且保护主进度不受干扰**。
+- **随机测验** - 支持自主选择测验题量（5/10/20/30/50/最多个词），“看中文选英文”下隐藏发音按钮防止剧透，并采用 **Web Audio API 代码直接合成播放“答对/答错”的简单提示音**。
 
 ### 🎯 核心功能
 
-- ✅ 多词库分类管理（小学/初中/常用/自定义）
-- ✅ 单词发音朗读（Web Speech API，完全免费）
-- ✅ 学习进度自动保存（LocalStorage）
-- ✅ 收藏和难点单词标记
-- ✅ 实时搜索和筛选
-- ✅ 响应式设计，支持手机和电脑
-
-### 📱 手机端优化
-
-- 紧凑布局，减少滚动
-- 适合手指点击的按钮尺寸
-- 自适应字体大小
-- 禁用下拉刷新，防止误操作
+- ✅ 异步按需加载，首屏极速加载，轻松承载数万单词。
+- ✅ 过滤简单词汇（如冠词 `a/an`、数字 `one/two`、基础代词等共 90 多个基础词），提升记忆效率。
+- ✅ 单词发音朗读（基于 Web Speech API 接口）。
+- ✅ 学习进度自动本地保存（LocalStorage）。
+- ✅ 收藏和难点单词分类标记，支持跨词包浏览。
+- ✅ 实时模糊搜索和过滤。
 
 ---
 
@@ -54,292 +51,89 @@ npm run build
 
 ---
 
-## 📖 自动化添加单词
+## 📖 自动化词汇提取与清洗
 
-只需要准备单词列表，脚本会自动生成音标、释义和例句。
+项目提供了一个数据迁移与清洗脚本，可从 GitHub 的英语词库项目中提取、过滤、去重并输出轻量的数据包。
 
-### 1. 安装依赖
+### 1. 准备数据源
+将词库原始大 JSON 文件夹（包含 `json-full` 数据）放到指定路径。
 
+### 2. 运行清洗脚本
 ```bash
-npm install axios
+node scripts/parse-vocabulary.cjs
 ```
 
-### 2. 编辑脚本
+### 3. 数据流程与存储
+清洗后的数据将自动生成并保存到项目公共目录中：
+- 索引元数据：`public/data/vocabularies/categories.json`
+- 分包 JSON 数据：`public/data/vocabularies/{key}.json`（例如 `cet4.json` 包含 4480 个不重复单词）
 
-打开 `scripts/generate-vocabulary.js`，修改配置：
-
-```javascript
-// 你的单词列表（只需要单词！）
-const WORDS = [
-  "apple",
-  "book",
-  "cat",
-  "dog",
-  "elephant",
-  "flower",
-  "girl",
-  "house",
-  "ice",
-  "juice",
-  // ... 添加更多单词
-];
-
-// 词库分类配置
-const CATEGORY_KEY = "elementary"; // 分类 key
-const CATEGORY_NAME = "小学词汇"; // 显示名称
-const CATEGORY_DESCRIPTION = "自动生成的词库";
-```
-
-### 3. 运行脚本
-
-```bash
-node scripts/generate-vocabulary.js
-```
-
-### 4. 查看结果
-
-生成的数据保存到 `src/data/vocabularies.json`，包含：
-
-- ✅ 音标（自动从 Free Dictionary API 获取）
-- ✅ 英文释义和例句
-- ⚠️ 中文释义需要手动补充（或配置翻译 API）
-
-### 详细文档
-
-查看 [`scripts/README.md`](./scripts/README.md) 了解更多用法和高级配置。
+前端启动时将仅加载轻量的 `categories.json`。切换词包后，才通过 Fetch 异步载入对应词包的轻量 JSON，加载时提供平滑的 Loading Spinner 动效。
 
 ---
 
-## 🗂️ 词库管理
+## 🗂️ 词包大纲
 
-### 词库结构
+目前项目支持以下 10 个专业词包：
 
-数据存储在 `src/data/vocabularies.json`：
-
-```json
-{
-  "elementary": {
-    "name": "小学词汇",
-    "description": "小学英语常用单词",
-    "words": [
-      {
-        "word": "apple",
-        "phonetic": "/ˈæpl/",
-        "meaning": "苹果",
-        "example": "I eat an apple every day."
-      }
-    ]
-  },
-  "junior": { ... },
-  "common": { ... }
-}
-```
-
-### 添加新词库
-
-**步骤 1**: 在 `vocabularies.json` 添加新分类
-
-```json
-{
-  "senior": {
-    "name": "高中词汇",
-    "description": "高中英语常用单词",
-    "words": [...]
-  }
-}
-```
-
-**步骤 2**: 更新 TypeScript 类型
-
-编辑 `src/types/index.ts`：
-
-```typescript
-export type VocabularyKey = "elementary" | "junior" | "common" | "senior";
-// 添加新的分类 key
-```
-
-**步骤 3**: 保存即可，开发服务器会自动热重载
-
-### 单词格式
-
-| 字段       | 类型   | 说明        | 示例                          |
-| ---------- | ------ | ----------- | ----------------------------- |
-| `word`     | string | 英文单词    | `"apple"`                     |
-| `phonetic` | string | 音标（IPA） | `"/ˈæpl/"`                    |
-| `meaning`  | string | 中文释义    | `"苹果"`                      |
-| `example`  | string | 英文例句    | `"I eat an apple every day."` |
+| 词包 Key | 词包名称 | 去重过滤后单词数 | 说明 |
+| :--- | :--- | :---: | :--- |
+| `chuzhong` | 初中词汇 | 1870 词 | 初中英语常用大纲单词 |
+| `gaozhong` | 高中词汇 | 3627 词 | 高考必备核心英语单词 |
+| `cet4` | 大学英语四级 | 4480 词 | 大学英语四级考试常用词汇 |
+| `cet6` | 大学英语六级 | 3986 词 | 大学英语六级考试常用词汇 |
+| `ielts` | 雅思词汇 | 5269 词 | 雅思考试（IELTS）核心词汇 |
+| `sat` | SAT词汇 | 4464 词 | 美国高考（SAT）常考学术词汇 |
+| `gmat` | GMAT词汇 | 3311 词 | 商科研究生入学考试常考词汇 |
+| `gre` | GRE核心词汇 | 9984 词 | 研究生入学考试学术词汇 |
+| `level4` | 专四词汇 | 4340 词 | 英语专业四级考试大纲词汇 |
+| `level8` | 专八词汇 | 12293 词 | 英语专业八级考试大纲词汇 |
 
 ---
 
 ## 🛠️ 技术栈
 
-- **框架**: Vue 3 + TypeScript
-- **构建工具**: Vite 8.0
-- **状态管理**: Composition API + LocalStorage
-- **发音**: Web Speech API
-- **样式**: Scoped CSS
+- **前端框架**: Vue 3 + TypeScript
+- **构建工具**: Vite 8.0 (ESM & 相对路径打包适配)
+- **发音支持**: Web Speech API
+- **音效合成**: Web Audio API (原生振荡器低延迟合成，答对/答错提示音)
+- **数据加载**: 异步 Fetch + LocalStorage 持久化
 
 ---
 
 ## 📂 项目结构
 
 ```
-english-learning-app/
+english-learning-web/
+├── public/
+│   ├── data/
+│   │   └── vocabularies/      # 异步按需加载的词包 JSON 文件
+│   │       ├── categories.json # 词库元数据索引
+│   │       ├── cet4.json
+│   │       └── ...
+│   ├── favicon.svg
+│   └── icons.svg
 ├── src/
 │   ├── components/
-│   │   ├── WordCard.vue      # 单词卡片组件
-│   │   ├── WordList.vue      # 单词列表组件
-│   │   └── QuizMode.vue      # 测验模式组件
+│   │   ├── WordCard.vue      # 单词卡片组件（选项卡按需展示衍生信息）
+│   │   ├── WordList.vue      # 单词列表组件（列表自带详情卡片 Modal）
+│   │   └── QuizMode.vue      # 测验模式组件（自定义题量与 Web Audio 合成音效）
 │   ├── composables/
-│   │   └── useTTS.ts         # TTS 发音功能
-│   ├── data/
-│   │   └── vocabularies.json # 词库数据
+│   │   └── useTTS.ts         # TTS 发音 Hook
 │   ├── types/
-│   │   └── index.ts          # TypeScript 类型定义
-│   ├── App.vue               # 主应用
-│   └── main.ts               # 入口文件
+│   │   └── index.ts          # TypeScript 类型声明
+│   ├── App.vue               # 主应用大厅及路由控制
+│   └── main.ts               # 入口文件（包含残留 Service Worker 的自动清理）
 ├── scripts/
-│   ├── generate-vocabulary.js # 自动化生成脚本
-│   └── README.md             # 脚本使用文档
-├── WORD_BANK_GUIDE.md        # 词库管理指南
-├── OPTIMIZATION_SUMMARY.md   # 优化总结
+│   └── parse-vocabulary.cjs  # 自动化提取、清洗与去重脚本
 ├── package.json
 └── README.md                 # 本文件
 ```
 
 ---
 
-## 📋 使用场景
-
-### 1. 小学生自主学习
-
-- 选择对应年级的词库
-- 逐个学习模式跟读发音
-- 完成测验检验掌握程度
-
-### 2. 老师布置作业
-
-- 创建自定义词库（输入单元单词）
-- 学生完成学习和测验
-- 查看学习进度
-
-### 3. 家长辅导孩子
-
-- 筛选收藏和难点单词
-- 重点复习薄弱环节
-- 反复练习直到掌握
-
----
-
-## 🎨 界面预览
-
-### 逐个学习模式
-
-- 大字体显示单词和释义
-- 点击喇叭图标播放发音
-- 收藏和标记难点单词
-- 上一个/下一个快速切换
-
-### 单词列表模式
-
-- 网格布局展示所有单词
-- 支持英文/中文搜索
-- 筛选：全部/收藏/难点
-- 视觉标记收藏和难点
-
-### 随机测验模式
-
-- 看英文选中文 / 看中文选英文
-- 即时反馈（✅/❌）
-- 进度条显示
-- 最终得分和正确率
-
----
-
-## 🔧 配置和扩展
-
-### 配置翻译 API（可选）
-
-如果需要自动翻译中文释义，配置百度翻译：
-
-```javascript
-// scripts/generate-vocabulary.js
-const USE_TRANSLATION = true;
-const BAIDU_APP_ID = "你的 APP ID";
-const BAIDU_SECRET = "你的密钥";
-```
-
-申请地址：https://fanyi-api.baidu.com/
-
-### 批量导入单词
-
-从 Excel/CSV 导入：
-
-1. 导出 CSV 格式
-2. 复制单词列
-3. 粘贴到 `WORDS` 数组
-4. 运行脚本
-
-### 自定义样式
-
-修改 `src/App.vue` 和各组件的 `<style>` 部分，调整：
-
-- 主题色（当前为紫色渐变）
-- 字体大小
-- 卡片样式
-- 按钮样式
-
----
-
-## 📊 数据来源
-
-### 推荐词库来源
-
-- GitHub 开源词库（搜索 "English vocabulary list"）
-- 教育部门发布的教学大纲词汇表
-- 校本课程词汇表
-- 自行整理的单词本
-
-### API 来源
-
-- **音标和英文释义**: [Free Dictionary API](https://dictionaryapi.dev/) - 免费，无需 Key
-- **中文翻译**: [百度翻译 API](https://fanyi-api.baidu.com/) - 有免费额度
-
----
-
-## 📝 开发记录
-
-- [词库管理指南](./WORD_BANK_GUIDE.md) - 详细的词库管理文档
-- [优化总结](./OPTIMIZATION_SUMMARY.md) - 手机端适配优化详情
-- [脚本使用文档](./scripts/README.md) - 自动化脚本完整说明
-
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-### 可以贡献的内容
-
-- 更多词库分类
-- 界面优化建议
-- 新功能想法
-- Bug 修复
-
----
-
 ## 📄 License
 
 MIT License
-
----
-
-## 🙏 致谢
-
-- [Vue 3](https://vuejs.org/) - 渐进式 JavaScript 框架
-- [Vite](https://vitejs.dev/) - 下一代前端构建工具
-- [Free Dictionary API](https://dictionaryapi.dev/) - 免费词典 API
-
----
 
 **Happy Learning! 🎉**
