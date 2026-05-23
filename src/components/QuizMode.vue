@@ -10,15 +10,31 @@
 
     <div v-if="!quizStarted" class="quiz-start">
       <p class="start-description">测试你的单词掌握程度！</p>
-      <div class="quiz-options">
-        <label>
-          <input type="radio" v-model="quizType" value="meaning" />
-          <span>看英文选中文</span>
-        </label>
-        <label>
-          <input type="radio" v-model="quizType" value="word" />
-          <span>看中文选英文</span>
-        </label>
+      <div class="quiz-options-container">
+        <div class="quiz-option-group">
+          <span class="option-title">测验模式：</span>
+          <div class="quiz-options">
+            <label>
+              <input type="radio" v-model="quizType" value="meaning" />
+              <span>看英文选中文</span>
+            </label>
+            <label>
+              <input type="radio" v-model="quizType" value="word" />
+              <span>看中文选英文</span>
+            </label>
+          </div>
+        </div>
+        <div class="quiz-option-group">
+          <span class="option-title">测验词数：</span>
+          <select v-model="quizCount" class="quiz-select">
+            <option :value="5">5 个单词</option>
+            <option :value="10">10 个单词</option>
+            <option :value="20">20 个单词</option>
+            <option :value="30">30 个单词</option>
+            <option :value="50">50 个单词</option>
+            <option :value="Math.min(100, words.length)">最多 ({{ Math.min(100, words.length) }} 个)</option>
+          </select>
+        </div>
       </div>
       <button class="start-btn" @click="startQuiz">开始测验</button>
     </div>
@@ -38,7 +54,7 @@
       <div class="question-card">
         <div class="question-label">请选择正确的答案：</div>
         <div class="question-word">{{ currentQuestion.question }}</div>
-        <button class="speak-question-btn" @click="speakQuestion">🔊 播放发音</button>
+        <button v-if="quizType === 'meaning'" class="speak-question-btn" @click="speakQuestion">🔊 播放发音</button>
       </div>
 
       <div class="answers-grid">
@@ -72,8 +88,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Word } from '@/types'
-import { useTTS } from '@/composables/useTTS'
+import type { Word } from '../types'
+import { useTTS } from '../composables/useTTS'
 
 const props = defineProps<{
   words: Word[]
@@ -88,11 +104,77 @@ const { speak } = useTTS()
 const quizStarted = ref(false)
 const quizFinished = ref(false)
 const quizType = ref<'meaning' | 'word'>('meaning')
+const quizCount = ref(10)
 const score = ref(0)
 const currentQuestionIndex = ref(0)
 const answered = ref(false)
 const selectedAnswer = ref<number | null>(null)
 const isCorrect = ref(false)
+
+// 使用 Web Audio API 动态合成简单答题提示音，无需加载任何音频文件
+const playQuizSound = (type: 'correct' | 'incorrect') => {
+  if (!('AudioContext' in window || 'webkitAudioContext' in window)) return
+  
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    const ctx = new AudioCtx()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    
+    const now = ctx.currentTime
+    
+    if (type === 'correct') {
+      // 成功：递增的清脆音
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(523.25, now) // C5
+      gain.gain.setValueAtTime(0, now)
+      gain.gain.linearRampToValueAtTime(0.15, now + 0.05)
+      gain.gain.linearRampToValueAtTime(0, now + 0.15)
+      
+      const osc2 = ctx.createOscillator()
+      const gain2 = ctx.createGain()
+      osc2.connect(gain2)
+      gain2.connect(ctx.destination)
+      osc2.type = 'sine'
+      osc2.frequency.setValueAtTime(659.25, now + 0.08) // E5
+      gain2.gain.setValueAtTime(0, now + 0.08)
+      gain2.gain.linearRampToValueAtTime(0.15, now + 0.13)
+      gain2.gain.linearRampToValueAtTime(0, now + 0.25)
+      
+      osc.start(now)
+      osc.stop(now + 0.15)
+      osc2.start(now + 0.08)
+      osc2.stop(now + 0.25)
+    } else {
+      // 失败：短促且明显的双击低频 Buzzer 警报音（锯齿波，在 150Hz 双音连发）
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(150, now) // 150Hz
+      gain.gain.setValueAtTime(0, now)
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.03)
+      gain.gain.linearRampToValueAtTime(0, now + 0.12)
+      
+      const osc2 = ctx.createOscillator()
+      const gain2 = ctx.createGain()
+      osc2.connect(gain2)
+      gain2.connect(ctx.destination)
+      osc2.type = 'sawtooth'
+      osc2.frequency.setValueAtTime(150, now + 0.1) // 0.1秒后发出第二声
+      gain2.gain.setValueAtTime(0, now + 0.1)
+      gain2.gain.linearRampToValueAtTime(0.18, now + 0.13)
+      gain2.gain.linearRampToValueAtTime(0, now + 0.22)
+      
+      osc.start(now)
+      osc.stop(now + 0.12)
+      osc2.start(now + 0.1)
+      osc2.stop(now + 0.22)
+    }
+  } catch (e) {
+    console.error('Failed to synthesize quiz sound:', e)
+  }
+}
 
 interface Question {
   question: string
@@ -115,7 +197,8 @@ const shuffleArray = <T>(array: T[]): T[] => {
 }
 
 const generateQuestions = () => {
-  const shuffledWords = shuffleArray([...props.words]).slice(0, 10)
+  const limit = Math.min(quizCount.value, props.words.length)
+  const shuffledWords = shuffleArray([...props.words]).slice(0, limit)
   questions.value = shuffledWords.map(word => {
     const otherWords = props.words.filter(w => w.word !== word.word)
     const wrongOptions = shuffleArray(otherWords).slice(0, 3)
@@ -176,6 +259,9 @@ const selectAnswer = (index: number) => {
   
   if (isCorrect.value) {
     score.value++
+    playQuizSound('correct')
+  } else {
+    playQuizSound('incorrect')
   }
 }
 
@@ -249,8 +335,49 @@ const getAnswerClass = (index: number) => {
 .quiz-options {
   display: flex;
   justify-content: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  gap: 1.5rem;
+}
+
+.quiz-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  align-items: center;
+  margin-bottom: 2.2rem;
+}
+
+.quiz-option-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.option-title {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: #555;
+  min-width: 90px;
+  text-align: right;
+}
+
+.quiz-select {
+  padding: 0.45rem 1.2rem;
+  font-size: 0.95rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  color: #333;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.quiz-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 8px rgba(102, 126, 234, 0.25);
 }
 
 .quiz-options label {

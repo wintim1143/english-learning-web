@@ -11,6 +11,7 @@
         />
       </div>
     </div>
+    
     <div class="filter-tabs">
       <button 
         :class="['tab', { active: filter === 'all' }]"
@@ -31,6 +32,7 @@
         📑 ({{ difficultWords.length }})
       </button>
     </div>
+    
     <div class="words-grid">
       <div 
         v-for="word in filteredWords" 
@@ -47,20 +49,39 @@
           <h3 class="item-word">{{ word.word }}</h3>
           <p class="item-meaning">{{ word.meaning }}</p>
         </div>
-        <button class="play-icon" @click.stop="handleWordClick(word)">
+        <button class="play-icon" @click.stop="handlePlayClick(word)">
           🔊
         </button>
       </div>
     </div>
+    
     <div v-if="filteredWords.length === 0" class="empty-state">
       <p>没有找到单词</p>
+    </div>
+
+    <!-- 单词详情弹窗 (Modal) -->
+    <div v-if="selectedWord" class="word-modal-overlay" @click="selectedWord = null">
+      <div class="word-modal-content" @click.stop>
+        <button class="close-modal-btn" @click="selectedWord = null">✕</button>
+        <WordCard
+          :word="selectedWord"
+          :is-speaking="isSpeaking"
+          :current-word="currentWord"
+          :is-favorite="favoriteWords.includes(selectedWord.word)"
+          :is-difficult="difficultWords.includes(selectedWord.word)"
+          @speak="handlePlayClick(selectedWord)"
+          @toggle-favorite="emit('toggleFavorite', selectedWord)"
+          @toggle-difficult="emit('toggleDifficult', selectedWord)"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Word } from '@/types'
+import type { Word } from '../types'
+import WordCard from './WordCard.vue'
 
 const props = defineProps<{
   words: Word[]
@@ -73,10 +94,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   play: [word: Word]
+  toggleFavorite: [word: Word]
+  toggleDifficult: [word: Word]
 }>()
 
 const searchQuery = ref('')
 const filter = ref<'all' | 'favorites' | 'difficult'>('all')
+
+const selectedWord = ref<Word | null>(null)
 
 const filteredWords = computed(() => {
   let result = props.words
@@ -99,6 +124,12 @@ const filteredWords = computed(() => {
 })
 
 const handleWordClick = (word: Word) => {
+  selectedWord.value = word
+  // 点击时顺便播放一下发音
+  handlePlayClick(word)
+}
+
+const handlePlayClick = (word: Word) => {
   emit('play', word)
 }
 </script>
@@ -228,6 +259,9 @@ const handleWordClick = (word: Word) => {
 
 .word-info {
   flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-word {
@@ -241,6 +275,9 @@ const handleWordClick = (word: Word) => {
   font-size: 0.85rem;
   color: #666;
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .play-icon {
@@ -269,6 +306,66 @@ const handleWordClick = (word: Word) => {
   padding: 2rem;
   color: #999;
   font-size: 1rem;
+}
+
+/* ================= 单词详情弹窗样式 ================= */
+.word-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s ease-out;
+  padding: 1.5rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.word-modal-content {
+  background: transparent;
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: -2.5rem;
+  right: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  z-index: 1001;
+  outline: none;
+}
+
+.close-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
 }
 
 @media (max-width: 480px) {

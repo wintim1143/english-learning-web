@@ -1,0 +1,62 @@
+[
+  {
+    "key": "chuzhong",
+    "name": "初中词汇",
+    "description": "初中英语常用大纲单词",
+    "count": 1870
+  },
+  {
+    "key": "gaozhong",
+    "name": "高中词汇",
+    "description": "高考必备核心英语单词",
+    "count": 3627
+  },
+  {
+    "key": "cet4",
+    "name": "大学英语四级",
+    "description": "大学英语四级考试（CET-4）常考词汇",
+    "count": 4480
+  },
+  {
+    "key": "cet6",
+    "name": "大学英语六级",
+    "description": "大学英语六级考试（CET-6）常考词汇",
+    "count": 3986
+  },
+  {
+    "key": "ielts",
+    "name": "雅思词汇",
+    "description": "雅思考试（IELTS）高频核心词汇",
+    "count": 5269
+  },
+  {
+    "key": "sat",
+    "name": "SAT词汇",
+    "description": "美国高考（SAT）常考及学术词汇",
+    "count": 4464
+  },
+  {
+    "key": "gmat",
+    "name": "GMAT词汇",
+    "description": "商科研究生入学考试（GMAT）常考词汇",
+    "count": 3311
+  },
+  {
+    "key": "gre",
+    "name": "GRE核心词汇",
+    "description": "研究生入学考试（GRE）高频学术词汇",
+    "count": 9984
+  },
+  {
+    "key": "level4",
+    "name": "专四词汇",
+    "description": "英语专业四级考试（TEM-4）大纲词汇",
+    "count": 4340
+  },
+  {
+    "key": "level8",
+    "name": "专八词汇",
+    "description": "英语专业八级考试（TEM-8）大纲词汇",
+    "count": 12293
+  }
+]

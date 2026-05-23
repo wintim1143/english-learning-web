@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue'
-import type { Word } from '@/types'
+import { ref } from 'vue'
+import type { Word } from '../types'
 
 export function useTTS() {
   const isSpeaking = ref(false)

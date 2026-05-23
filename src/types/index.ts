@@ -2,7 +2,12 @@ export interface Word {
   word: string
   phonetic: string
   meaning: string
-  example: string
+  example?: string
+  exampleCn?: string
+  phrases?: string[]
+  synos?: string[]
+  antos?: string[]
+  rels?: string[]
 }
 
 export interface VocabularyCategory {
@@ -11,12 +16,15 @@ export interface VocabularyCategory {
   words: Word[]
 }
 
-export interface Vocabularies {
-  [key: string]: VocabularyCategory
+export interface VocabularyMetadata {
+  key: string
+  name: string
+  description: string
+  count: number
 }
 
 export type LearningMode = 'sequential' | 'list' | 'quiz'
-export type VocabularyKey = 'elementary' | 'junior' | 'common'
+export type VocabularyKey = string
 
 export interface LearningProgress {
   vocabularyKey: VocabularyKey
