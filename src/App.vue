@@ -183,7 +183,7 @@ const loadVocabularyData = async (key: string) => {
   if (!key) return
   isLoading.value = true
   try {
-    const response = await fetch(`/data/vocabularies/${key}.json`)
+    const response = await fetch(`${import.meta.env.BASE_URL}data/vocabularies/${key}.json`)
     if (!response.ok) {
       throw new Error(`Failed to fetch vocabulary: ${response.statusText}`)
     }
@@ -315,7 +315,7 @@ watch([currentWordIndex, favoriteWords, difficultWords], () => {
 onMounted(async () => {
   isLoading.value = true
   try {
-    const response = await fetch('/data/vocabularies/categories.json')
+    const response = await fetch(`${import.meta.env.BASE_URL}data/vocabularies/categories.json`)
     if (!response.ok) {
       throw new Error(`Failed to fetch categories: ${response.statusText}`)
     }
